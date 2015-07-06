@@ -1,14 +1,28 @@
-# Simulating remote HTTP servers for functional testing
+package org.commonjava.test.http;
 
-This is a test fixture, which provides a very basic servlet that registers expected requests and logs access counts for each requested method/path combination. If no expectation is registered for a particular method/path, 404 is returned.
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
 
-Usage is pretty simple:
+import java.io.InputStream;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.junit.Rule;
+import org.junit.Test;
+
+public class TestHttpServerTest
+{
 
     @Rule
     public TestHttpServer server = new TestHttpServer( "repos" );
 
     @Test
-    public void run()
+    public void simpleDownload()
         throws Exception
     {
         final String path = "/repos/path/to/something.txt";
@@ -55,3 +69,4 @@ Usage is pretty simple:
                           .get( server.getAccessKey( CommonMethod.GET.name(), path ) ), equalTo( 1 ) );
     }
 
+}
