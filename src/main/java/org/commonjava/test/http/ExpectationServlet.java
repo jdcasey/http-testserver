@@ -182,10 +182,19 @@ public final class ExpectationServlet
         resp.setStatus( 404 );
     }
 
-    public String getAccessKey( CommonMethod method, String path )
+    public String getAccessKey( final CommonMethod method, final String path )
     {
-        // TODO Auto-generated method stub
-        return null;
+        return getAccessKey( method.name(), path );
+    }
+
+    public Integer getAccessesFor( final String path )
+    {
+        return accessesByPath.get( getAccessKey( CommonMethod.GET, path ) );
+    }
+
+    public Integer getAccessesFor( final String method, final String path )
+    {
+        return accessesByPath.get( getAccessKey( method, path ) );
     }
 
 }

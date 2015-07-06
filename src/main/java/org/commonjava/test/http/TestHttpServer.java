@@ -200,4 +200,13 @@ public class TestHttpServer
         return servlet.getAccessKey( method, path );
     }
 
+    public Integer getAccessesFor( final String path )
+    {
+        return servlet.getAccessesFor( path );
+    }
+
+    public Integer getAccessesFor( final String method, final String path )
+    {
+        return servlet.getAccessesFor( method, path );
+    }
 }
