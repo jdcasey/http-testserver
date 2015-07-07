@@ -116,6 +116,18 @@ public class TestHttpServer
         }
     }
 
+    public String formatPath( final String... subpath )
+    {
+        try
+        {
+            return UrlUtils.buildPath( servlet.getBaseResource(), subpath );
+        }
+        catch ( final MalformedURLException e )
+        {
+            throw new IllegalArgumentException( "Failed to build url to: " + Arrays.toString( subpath ), e );
+        }
+    }
+
     public String getBaseUri()
     {
         try
