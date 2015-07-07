@@ -147,12 +147,14 @@ public final class ExpectationServlet
         {
             final ContentResponse error = errors.get( key );
             logger.error( "Returning registered error: {}", error );
-            resp.sendError( error.code() );
 
             if ( error.body() != null )
             {
-                resp.getWriter()
-                    .write( error.body() );
+                resp.sendError( error.code(), error.body() );
+            }
+            else
+            {
+                resp.sendError( error.code() );
             }
 
             return;
