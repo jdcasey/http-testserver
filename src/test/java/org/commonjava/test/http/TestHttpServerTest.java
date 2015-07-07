@@ -25,9 +25,10 @@ public class TestHttpServerTest
     public void simpleDownload()
         throws Exception
     {
-        final String path = "/repos/path/to/something.txt";
+        final String subPath = "/path/to/something.txt";
         final String content = "this is the content";
-        final String url = server.formatUrl( path );
+        final String url = server.formatUrl( subPath );
+        final String path = server.formatPath( subPath );
         server.expect( url, 200, content );
 
         final HttpGet request = new HttpGet( url );
@@ -65,8 +66,12 @@ public class TestHttpServerTest
             }
         }
 
+        System.out.println( server.getAccessesByPathKey() );
+
+        final String key = server.getAccessKey( CommonMethod.GET.name(), path );
+        System.out.println( "Getting accesses for: '" + key + "'" );
         assertThat( server.getAccessesByPathKey()
-                          .get( server.getAccessKey( CommonMethod.GET.name(), path ) ), equalTo( 1 ) );
+                          .get( key ), equalTo( 1 ) );
     }
 
 }

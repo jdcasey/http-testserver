@@ -54,31 +54,55 @@ public final class UrlUtils
                                    final String... parts )
         throws MalformedURLException
     {
+        return new URL( buildPath( baseUrl, basePath, params, parts ) ).toExternalForm();
+    }
+
+    public static String buildPath( final String rootPath, final String... parts )
+        throws MalformedURLException
+    {
+        return buildPath( rootPath, null, null, parts );
+    }
+
+    public static String buildPath( final String rootPath, final String baseSubPath, final String[] parts )
+        throws MalformedURLException
+    {
+        return buildPath( rootPath, baseSubPath, null, parts );
+    }
+
+    public static String buildPath( final String rootPath, final Map<String, String> params, final String... parts )
+        throws MalformedURLException
+    {
+        return buildPath( rootPath, null, params, parts );
+    }
+
+    public static String buildPath( final String rootPath, final String baseSubPath, final Map<String, String> params,
+                                    final String[] parts )
+    {
         if ( parts == null || parts.length < 1 )
         {
-            return baseUrl;
+            return rootPath;
         }
 
-        final StringBuilder urlBuilder = new StringBuilder();
+        final StringBuilder pathBuilder = new StringBuilder();
 
-        if ( parts[0] == null || !parts[0].startsWith( baseUrl ) )
+        if ( parts[0] == null || !parts[0].startsWith( rootPath ) )
         {
-            urlBuilder.append( baseUrl );
+            pathBuilder.append( rootPath );
         }
 
-        if ( basePath == null || basePath.length() < 1 || "/".equals( basePath ) )
+        if ( baseSubPath != null && baseSubPath.length() > 0 )
         {
-            appendPartTo( urlBuilder, basePath );
+            appendPartTo( pathBuilder, baseSubPath );
         }
 
         for ( final String part : parts )
         {
-            appendPartTo( urlBuilder, part );
+            appendPartTo( pathBuilder, part );
         }
 
         if ( params != null && !params.isEmpty() )
         {
-            urlBuilder.append( "?" );
+            pathBuilder.append( "?" );
             boolean first = true;
             for ( final Map.Entry<String, String> param : params.entrySet() )
             {
@@ -88,22 +112,22 @@ public final class UrlUtils
                 }
                 else
                 {
-                    urlBuilder.append( "&" );
+                    pathBuilder.append( "&" );
                 }
 
-                urlBuilder.append( param.getKey() )
+                pathBuilder.append( param.getKey() )
                           .append( "=" )
                           .append( param.getValue() );
             }
         }
 
-        return new URL( urlBuilder.toString() ).toExternalForm();
+        return pathBuilder.toString();
     }
 
-    private static void appendPartTo( final StringBuilder urlBuilder, String part )
+    private static void appendPartTo( final StringBuilder pathBuilder, String part )
     {
         if ( part == null || part.trim()
-                                 .length() < 1 || "/".equals( part.trim() ) )
+                                 .length() < 1 )
         {
             return;
         }
@@ -113,12 +137,12 @@ public final class UrlUtils
             part = part.substring( 1 );
         }
 
-        if ( urlBuilder.length() > 0 && urlBuilder.charAt( urlBuilder.length() - 1 ) != '/' )
+        if ( pathBuilder.length() > 0 && pathBuilder.charAt( pathBuilder.length() - 1 ) != '/' )
         {
-            urlBuilder.append( "/" );
+            pathBuilder.append( "/" );
         }
 
-        urlBuilder.append( part );
+        pathBuilder.append( part );
     }
 
 }

@@ -41,7 +41,16 @@ public final class ExpectationServlet
 
     public ExpectationServlet( final String baseResource )
     {
-        this.baseResource = baseResource == null ? "/" : baseResource;
+        String br = baseResource;
+        if ( br == null )
+        {
+            br = "/";
+        }
+        else if ( !br.startsWith( "/" ) )
+        {
+            br = "/" + br;
+        }
+        this.baseResource = br;
     }
 
     public Map<String, Integer> getAccessesByPath()
