@@ -146,6 +146,7 @@ public class TestHttpServer
 
     public void registerException( final String url, final String error )
     {
+        servlet.registerException( "HEAD", url, 500, error );
         servlet.registerException( "GET", url, 500, error );
     }
 
@@ -156,6 +157,7 @@ public class TestHttpServer
 
     public void registerException( final String url, final String error, final int responseCode )
     {
+        servlet.registerException( "HEAD", url, responseCode, error );
         servlet.registerException( "GET", url, responseCode, error );
     }
 
