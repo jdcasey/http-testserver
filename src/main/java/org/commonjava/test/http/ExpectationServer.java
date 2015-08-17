@@ -21,27 +21,24 @@ import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.DeploymentManager;
 import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.util.ImmediateInstanceFactory;
-
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Map;
-
-import javax.servlet.Servlet;
-
 import org.commonjava.test.http.util.PortFinder;
 import org.commonjava.test.http.util.UrlUtils;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Preserved for old APIs. Use {@link ExpectationServer} instead.
- */
-@Deprecated
-public class TestHttpServer
-    extends ExpectationServer
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Map;
+
+public class ExpectationServer
+        extends ExternalResource
+        implements HttpServerFixture<ExpectationServer>
 {
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
@@ -52,12 +49,12 @@ public class TestHttpServer
 
     private Undertow server;
 
-    public TestHttpServer()
+    public ExpectationServer()
     {
         this( null );
     }
 
-    public TestHttpServer( final String baseResource )
+    public ExpectationServer( final String baseResource )
     {
         servlet = new ExpectationServlet( baseResource );
     }
@@ -70,6 +67,11 @@ public class TestHttpServer
     @Override
     public void after()
     {
+        stop();
+    }
+
+    public void stop()
+    {
         if ( server != null )
         {
             server.stop();
@@ -79,7 +81,13 @@ public class TestHttpServer
 
     @Override
     public void before()
-        throws Exception
+            throws Exception
+    {
+        start();
+    }
+
+    public ExpectationServer start()
+            throws IOException
     {
         final ServletInfo si = Servlets.servlet( "TEST", ExpectationServlet.class )
                                        .addMapping( "*" )
@@ -91,21 +99,25 @@ public class TestHttpServer
         final DeploymentInfo di = new DeploymentInfo().addServlet( si )
                                                       .setDeploymentName( "TEST" )
                                                       .setContextPath( "/" )
-                                                      .setClassLoader( Thread.currentThread()
-                                                                             .getContextClassLoader() );
+                                                      .setClassLoader( Thread.currentThread().getContextClassLoader() );
 
-        final DeploymentManager dm = Servlets.defaultContainer()
-                                             .addDeployment( di );
+        final DeploymentManager dm = Servlets.defaultContainer().addDeployment( di );
         dm.deploy();
 
         port = PortFinder.findOpenPort( 16 );
-        server = Undertow.builder()
-                         .setHandler( dm.start() )
-                         .addHttpListener( port, "127.0.0.1" )
-                         .build();
+        try
+        {
+            server = Undertow.builder().setHandler( dm.start() ).addHttpListener( port, "127.0.0.1" ).build();
+        }
+        catch ( ServletException e )
+        {
+            throw new IOException( "Failed to start: " + e.getMessage(), e );
+        }
 
         server.start();
         logger.info( "STARTED Test HTTP Server on 127.0.0.1:" + port );
+
+        return this;
     }
 
     public String formatUrl( final String... subpath )
@@ -145,7 +157,7 @@ public class TestHttpServer
     }
 
     public String getUrlPath( final String url )
-        throws MalformedURLException
+            throws MalformedURLException
     {
         return new URL( url ).getPath();
     }
@@ -183,27 +195,28 @@ public class TestHttpServer
     }
 
     public void expect( final String testUrl, final int responseCode, final String body )
-        throws Exception
+            throws Exception
     {
         servlet.expect( "GET", testUrl, responseCode, body );
         servlet.expect( "HEAD", testUrl, responseCode, (String) null );
     }
 
     public void expect( final String method, final String testUrl, final int responseCode, final String body )
-        throws Exception
+            throws Exception
     {
         servlet.expect( method, testUrl, responseCode, body );
     }
 
     public void expect( final String testUrl, final int responseCode, final InputStream bodyStream )
-        throws Exception
+            throws Exception
     {
         servlet.expect( "GET", testUrl, responseCode, bodyStream );
         servlet.expect( "HEAD", testUrl, responseCode, (String) null );
     }
 
-    public void expect( final String method, final String testUrl, final int responseCode, final InputStream bodyStream )
-        throws Exception
+    public void expect( final String method, final String testUrl, final int responseCode,
+                        final InputStream bodyStream )
+            throws Exception
     {
         servlet.expect( method, testUrl, responseCode, bodyStream );
     }

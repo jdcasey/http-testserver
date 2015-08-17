@@ -23,6 +23,6 @@ package org.commonjava.test.http;
 public enum CommonMethod
 {
 
-    GET, PUT, POST, DELETE, HEAD, OPTIONS;
+    GET, PUT, POST, DELETE, HEAD, OPTIONS
 
 }

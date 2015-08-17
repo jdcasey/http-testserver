@@ -1,6 +1,6 @@
 # Simulating remote HTTP servers for functional testing
 
-This is a test fixture, which provides a very basic servlet that registers expected requests and logs access counts for each requested method/path combination. If no expectation is registered for a particular method/path, 404 is returned.
+This is a test fixture, which provides a very basic servlet that registers expected requests and logs access counts for each requested method/pathParts combination. If no expectation is registered for a particular method/pathParts, 404 is returned.
 
 Usage is pretty simple:
 
@@ -11,9 +11,9 @@ Usage is pretty simple:
     public void run()
         throws Exception
     {
-        final String path = "/repos/path/to/something.txt";
+        final String pathParts = "/repos/pathParts/to/something.txt";
         final String content = "this is the content";
-        final String url = server.formatUrl( path );
+        final String url = server.formatUrl( pathParts );
         server.expect( url, 200, content );
 
         final HttpGet request = new HttpGet( url );
@@ -52,6 +52,6 @@ Usage is pretty simple:
         }
 
         assertThat( server.getAccessesByPathKey()
-                          .get( server.getAccessKey( CommonMethod.GET.name(), path ) ), equalTo( 1 ) );
+                          .get( server.getAccessKey( CommonMethod.GET.name(), pathParts ) ), equalTo( 1 ) );
     }
 
