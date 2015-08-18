@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.commonjava.test.http;
+package org.commonjava.test.http.common;
 
 /**
  * Convenience enum. Some of the more common HTTP methods in use.
@@ -23,6 +23,6 @@ package org.commonjava.test.http;
 public enum CommonMethod
 {
 
-    GET, PUT, POST, DELETE, HEAD, OPTIONS;
+    GET, PUT, POST, DELETE, HEAD, OPTIONS
 
 }
