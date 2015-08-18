@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.commonjava.test.http;
+package org.commonjava.test.http.stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.commonjava.test.http.common.CommonMethod;
+import org.commonjava.test.http.expect.ContentResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class StreamServlet
-    extends HttpServlet
+        extends HttpServlet
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
@@ -41,9 +43,14 @@ public final class StreamServlet
 
     private final Map<String, Integer> accessesByPath = new HashMap<>();
 
-    private final Map<String, ContentResponse> errors = new HashMap<>();
-
     private StreamResolver resolver;
+
+    public StreamServlet()
+    {
+        throw new IllegalArgumentException( "You cannot use the default constructor for StreamServlet. "
+                                                    + "It is designed to be passed into the StreamServer Undertow "
+                                                    + "instance using an ImmediateInstanceFactory." );
+    }
 
     public StreamServlet( StreamResolver resolver )
     {
@@ -55,11 +62,6 @@ public final class StreamServlet
         return accessesByPath;
     }
 
-    public Map<String, ContentResponse> getRegisteredErrors()
-    {
-        return errors;
-    }
-
     public String getAccessKey( final String method, final String path )
     {
         return method.toUpperCase() + " " + path;
@@ -67,7 +69,7 @@ public final class StreamServlet
 
     @Override
     protected void service( final HttpServletRequest req, final HttpServletResponse resp )
-        throws ServletException, IOException
+            throws ServletException, IOException
     {
         String wholePath;
         try
@@ -87,8 +89,7 @@ public final class StreamServlet
 
         final String key = getAccessKey( req.getMethod(), wholePath );
 
-        logger.info( "Looking up expectation for: {}", key );
-
+        logger.info( "Request: {}", key );
         final Integer i = accessesByPath.get( key );
         if ( i == null )
         {
@@ -99,40 +100,25 @@ public final class StreamServlet
             accessesByPath.put( key, i + 1 );
         }
 
-        logger.info( "Looking for error: '{}' in:\n{}", key, errors );
-        if ( errors.containsKey( key ) )
-        {
-            final ContentResponse error = errors.get( key );
-            logger.error( "Returning registered error: {}", error );
-
-            if ( error.body() != null )
-            {
-                resp.sendError( error.code(), error.body() );
-            }
-            else
-            {
-                resp.sendError( error.code() );
-            }
-
-            return;
-        }
-
         logger.info( "Looking for resource: '{}'", path );
-        try(InputStream in = resolver.get(path); OutputStream out = resp.getOutputStream())
+        try (InputStream in = resolver.get( path );
+             OutputStream out = resp.getOutputStream())
         {
             if ( in != null )
             {
+                logger.info("Found: {}", in);
                 resp.setStatus( 200 );
                 IOUtils.copy( in, out );
             }
             else
             {
+                logger.info("Not found: {}", path);
                 resp.setStatus( 404 );
             }
         }
         catch ( Exception e )
         {
-            logger.info("Error retrieving: " + path + ". Reason: " + e.getMessage(), e );
+            logger.info( "Error retrieving: " + path + ". Reason: " + e.getMessage(), e );
 
             resp.setStatus( 500 );
             resp.getWriter().write( StringUtils.join( e.getStackTrace(), "\n" ) );

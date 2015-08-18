@@ -1,4 +1,4 @@
-package org.commonjava.test.http;
+package org.commonjava.test.http.stream;
 
 import java.io.IOException;
 import java.io.InputStream;

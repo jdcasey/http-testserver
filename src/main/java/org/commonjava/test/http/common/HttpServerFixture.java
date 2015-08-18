@@ -1,6 +1,4 @@
-package org.commonjava.test.http;
-
-import org.apache.http.impl.bootstrap.HttpServer;
+package org.commonjava.test.http.common;
 
 import java.io.IOException;
 

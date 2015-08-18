@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.commonjava.test.http;
+package org.commonjava.test.http.stream;
 
 import io.undertow.Undertow;
 import io.undertow.servlet.Servlets;
@@ -21,6 +21,9 @@ import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.DeploymentManager;
 import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.util.ImmediateInstanceFactory;
+import org.commonjava.test.http.common.CommonMethod;
+import org.commonjava.test.http.common.HttpServerFixture;
+import org.commonjava.test.http.expect.ContentResponse;
 import org.commonjava.test.http.util.PortFinder;
 import org.commonjava.test.http.util.UrlUtils;
 import org.junit.rules.ExternalResource;
@@ -29,34 +32,51 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
 
-public class ExpectationServer
-        extends ExternalResource
-        implements HttpServerFixture<ExpectationServer>
+import static org.commonjava.test.http.util.StreamUtils.isDirectoryResource;
+import static org.commonjava.test.http.util.StreamUtils.isJarResource;
+
+public class StreamServer
+    extends ExternalResource
+    implements HttpServerFixture<StreamServer>
 {
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private Integer port;
 
-    private final ExpectationServlet servlet;
+    private final StreamServlet servlet;
 
     private Undertow server;
 
-    public ExpectationServer()
+    public StreamServer( final StreamResolver resolver )
     {
-        this( null );
+        servlet = new StreamServlet( resolver );
     }
 
-    public ExpectationServer( final String baseResource )
+    public StreamServer( final String resourceBase )
     {
-        servlet = new ExpectationServlet( baseResource );
+        StreamResolver resolver;
+        if ( isJarResource( resourceBase ))
+        {
+            resolver = new JarFileResolver( resourceBase );
+        }
+        else if ( isDirectoryResource( resourceBase ))
+        {
+            resolver = new FileResolver( resourceBase );
+        }
+        else
+        {
+            throw new IllegalArgumentException( "Cannot serve resources from: " + resourceBase + ". It it neither jar/zip archive nor directory." );
+        }
+
+        servlet = new StreamServlet( resolver );
     }
 
     public int getPort()
@@ -81,15 +101,14 @@ public class ExpectationServer
 
     @Override
     public void before()
-            throws Exception
+        throws Exception
     {
         start();
     }
 
-    public ExpectationServer start()
-            throws IOException
+    public StreamServer start() throws IOException
     {
-        final ServletInfo si = Servlets.servlet( "TEST", ExpectationServlet.class )
+        final ServletInfo si = Servlets.servlet( "TEST", StreamServlet.class )
                                        .addMapping( "*" )
                                        .addMapping( "/*" )
                                        .setLoadOnStartup( 1 );
@@ -99,15 +118,20 @@ public class ExpectationServer
         final DeploymentInfo di = new DeploymentInfo().addServlet( si )
                                                       .setDeploymentName( "TEST" )
                                                       .setContextPath( "/" )
-                                                      .setClassLoader( Thread.currentThread().getContextClassLoader() );
+                                                      .setClassLoader( Thread.currentThread()
+                                                                             .getContextClassLoader() );
 
-        final DeploymentManager dm = Servlets.defaultContainer().addDeployment( di );
+        final DeploymentManager dm = Servlets.defaultContainer()
+                                             .addDeployment( di );
         dm.deploy();
 
         port = PortFinder.findOpenPort( 16 );
         try
         {
-            server = Undertow.builder().setHandler( dm.start() ).addHttpListener( port, "127.0.0.1" ).build();
+            server = Undertow.builder()
+                             .setHandler( dm.start() )
+                             .addHttpListener( port, "127.0.0.1" )
+                             .build();
         }
         catch ( ServletException e )
         {
@@ -124,7 +148,7 @@ public class ExpectationServer
     {
         try
         {
-            return UrlUtils.buildUrl( "http://127.0.0.1:" + port, servlet.getBaseResource(), subpath );
+            return UrlUtils.buildUrl( "http://127.0.0.1:" + port, subpath );
         }
         catch ( final MalformedURLException e )
         {
@@ -136,7 +160,7 @@ public class ExpectationServer
     {
         try
         {
-            return UrlUtils.buildPath( servlet.getBaseResource(), subpath );
+            return UrlUtils.buildPath( "/", subpath );
         }
         catch ( final MalformedURLException e )
         {
@@ -146,18 +170,11 @@ public class ExpectationServer
 
     public String getBaseUri()
     {
-        try
-        {
-            return UrlUtils.buildUrl( "http://127.0.0.1:" + port, servlet.getBaseResource() );
-        }
-        catch ( final MalformedURLException e )
-        {
-            throw new IllegalArgumentException( "Failed to build base-URI.", e );
-        }
+        return "http://127.0.0.1:" + port;
     }
 
     public String getUrlPath( final String url )
-            throws MalformedURLException
+        throws MalformedURLException
     {
         return new URL( url ).getPath();
     }
@@ -165,60 +182,6 @@ public class ExpectationServer
     public Map<String, Integer> getAccessesByPathKey()
     {
         return servlet.getAccessesByPath();
-    }
-
-    public Map<String, ContentResponse> getRegisteredErrors()
-    {
-        return servlet.getRegisteredErrors();
-    }
-
-    public void registerException( final String url, final String error )
-    {
-        servlet.registerException( "HEAD", url, 500, error );
-        servlet.registerException( "GET", url, 500, error );
-    }
-
-    public void registerException( final String method, final String url, final String error )
-    {
-        servlet.registerException( method, url, 500, error );
-    }
-
-    public void registerException( final String url, final String error, final int responseCode )
-    {
-        servlet.registerException( "HEAD", url, responseCode, error );
-        servlet.registerException( "GET", url, responseCode, error );
-    }
-
-    public void registerException( final String method, final String url, final int responseCode, final String error )
-    {
-        servlet.registerException( method, url, responseCode, error );
-    }
-
-    public void expect( final String testUrl, final int responseCode, final String body )
-            throws Exception
-    {
-        servlet.expect( "GET", testUrl, responseCode, body );
-        servlet.expect( "HEAD", testUrl, responseCode, (String) null );
-    }
-
-    public void expect( final String method, final String testUrl, final int responseCode, final String body )
-            throws Exception
-    {
-        servlet.expect( method, testUrl, responseCode, body );
-    }
-
-    public void expect( final String testUrl, final int responseCode, final InputStream bodyStream )
-            throws Exception
-    {
-        servlet.expect( "GET", testUrl, responseCode, bodyStream );
-        servlet.expect( "HEAD", testUrl, responseCode, (String) null );
-    }
-
-    public void expect( final String method, final String testUrl, final int responseCode,
-                        final InputStream bodyStream )
-            throws Exception
-    {
-        servlet.expect( method, testUrl, responseCode, bodyStream );
     }
 
     public String getAccessKey( final CommonMethod method, final String path )

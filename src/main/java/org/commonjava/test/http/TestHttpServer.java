@@ -30,9 +30,12 @@ import java.util.Map;
 
 import javax.servlet.Servlet;
 
+import org.commonjava.test.http.common.CommonMethod;
+import org.commonjava.test.http.expect.ContentResponse;
+import org.commonjava.test.http.expect.ExpectationServer;
+import org.commonjava.test.http.expect.ExpectationServlet;
 import org.commonjava.test.http.util.PortFinder;
 import org.commonjava.test.http.util.UrlUtils;
-import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

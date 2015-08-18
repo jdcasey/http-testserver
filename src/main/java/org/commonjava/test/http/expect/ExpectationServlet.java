@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.commonjava.test.http;
+package org.commonjava.test.http.expect;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
+import org.commonjava.test.http.common.CommonMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
