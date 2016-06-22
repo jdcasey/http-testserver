@@ -19,13 +19,15 @@ import java.io.InputStream;
 
 public final class ContentResponse
 {
-    private final int code;
+    private final Integer code;
 
     private final InputStream bodyStream;
 
     private final String body;
 
     private final String path;
+
+    private final ExpectationHandler handler;
 
     private final String method;
 
@@ -36,6 +38,7 @@ public final class ContentResponse
         this.code = code;
         this.body = body;
         this.bodyStream = null;
+        handler = null;
     }
 
     ContentResponse( final String method, final String path, final int code, final InputStream bodyStream )
@@ -44,7 +47,18 @@ public final class ContentResponse
         this.path = path;
         this.code = code;
         this.body = null;
+        handler = null;
         this.bodyStream = bodyStream;
+    }
+
+    ContentResponse( String method, String path, ExpectationHandler handler )
+    {
+        this.method = method;
+        this.path = path;
+        this.handler = handler;
+        this.body = null;
+        this.bodyStream = null;
+        code = null;
     }
 
     public String method()
@@ -57,7 +71,7 @@ public final class ContentResponse
         return path;
     }
 
-    public int code()
+    public Integer code()
     {
         return code;
     }
@@ -70,6 +84,11 @@ public final class ContentResponse
     public InputStream bodyStream()
     {
         return bodyStream;
+    }
+
+    public ExpectationHandler handler()
+    {
+        return handler;
     }
 
     @Override

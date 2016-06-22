@@ -223,6 +223,12 @@ public class ExpectationServer
         servlet.expect( method, testUrl, responseCode, bodyStream );
     }
 
+    public void expect( final String method, final String testUrl, ExpectationHandler handler)
+            throws Exception
+    {
+        servlet.expect( method, testUrl, handler );
+    }
+
     public String getAccessKey( final CommonMethod method, final String path )
     {
         return servlet.getAccessKey( method, path );

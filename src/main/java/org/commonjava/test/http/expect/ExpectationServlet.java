@@ -133,6 +133,15 @@ public final class ExpectationServlet
                                                                                   bodyStream ) );
     }
 
+    public void expect( String method, String testUrl, ExpectationHandler handler )
+    {
+        final String path = getPath( testUrl );
+
+        final String key = getAccessKey( method, path );
+        logger.info( "Registering expectation: {}, handler: {}", key, handler );
+        expectations.put( key, new ContentResponse( method, path, handler ) );
+    }
+
     @Override
     protected void service( final HttpServletRequest req, final HttpServletResponse resp )
         throws ServletException, IOException
@@ -173,9 +182,19 @@ public final class ExpectationServlet
             final ContentResponse error = errors.get( key );
             logger.error( "Returning registered error: {}", error );
 
-            if ( error.body() != null )
+            if ( error.handler() != null )
+            {
+                error.handler().handle( req, resp );
+                return;
+            }
+            else if ( error.body() != null )
             {
                 resp.sendError( error.code(), error.body() );
+            }
+            else if ( error.bodyStream() != null )
+            {
+                resp.setStatus( error.code() );
+                IOUtils.copy( error.bodyStream(), resp.getOutputStream() );
             }
             else
             {
@@ -193,7 +212,12 @@ public final class ExpectationServlet
 
             resp.setStatus( expectation.code() );
 
-            if ( expectation.body() != null )
+            if ( expectation.handler() != null )
+            {
+                expectation.handler().handle( req, resp );
+                return;
+            }
+            else if ( expectation.body() != null )
             {
                 resp.getWriter()
                     .write( expectation.body() );
