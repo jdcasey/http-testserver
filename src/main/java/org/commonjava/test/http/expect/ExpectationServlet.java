@@ -210,8 +210,6 @@ public final class ExpectationServlet
         {
             logger.info( "Responding via registered expectation: {}", expectation );
 
-            resp.setStatus( expectation.code() );
-
             if ( expectation.handler() != null )
             {
                 expectation.handler().handle( req, resp );
@@ -219,11 +217,15 @@ public final class ExpectationServlet
             }
             else if ( expectation.body() != null )
             {
+                resp.setStatus( expectation.code() );
+
                 resp.getWriter()
                     .write( expectation.body() );
             }
             else if ( expectation.bodyStream() != null )
             {
+                resp.setStatus( expectation.code() );
+
                 IOUtils.copy( expectation.bodyStream(), resp.getOutputStream() );
             }
 
