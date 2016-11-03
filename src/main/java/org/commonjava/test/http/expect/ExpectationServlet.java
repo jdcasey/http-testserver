@@ -228,6 +228,10 @@ public final class ExpectationServlet
 
                 IOUtils.copy( expectation.bodyStream(), resp.getOutputStream() );
             }
+            else
+            {
+                resp.setStatus( expectation.code() );
+            }
 
             return;
         }
