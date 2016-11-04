@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.commonjava.test.http.common.CommonMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -213,12 +214,14 @@ public final class ExpectationServlet
             if ( expectation.handler() != null )
             {
                 expectation.handler().handle( req, resp );
+                logger.info( "Using handler..." );
                 return;
             }
             else if ( expectation.body() != null )
             {
                 resp.setStatus( expectation.code() );
 
+                logger.info( "Set status: {} with body string", expectation.code() );
                 resp.getWriter()
                     .write( expectation.body() );
             }
@@ -226,11 +229,13 @@ public final class ExpectationServlet
             {
                 resp.setStatus( expectation.code() );
 
+                logger.info( "Set status: {} with body InputStream", expectation.code() );
                 IOUtils.copy( expectation.bodyStream(), resp.getOutputStream() );
             }
             else
             {
                 resp.setStatus( expectation.code() );
+                logger.info( "Set status: {} with no body", expectation.code() );
             }
 
             return;

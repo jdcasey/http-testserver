@@ -94,6 +94,13 @@ public final class ContentResponse
     @Override
     public String toString()
     {
-        return "Expect (" + method + " " + path + "), and respond with code:" + code() + ", body:\n" + body();
+        return "ContentResponse{" +
+                "\n\tcode=" + code +
+                "\n\tbodyStream=" + bodyStream +
+                "\n\tbody='" + body + '\'' +
+                "\n\tpath='" + path + '\'' +
+                "\n\thandler=" + handler +
+                "\n\tmethod='" + method + '\'' +
+                "\n}";
     }
 }
