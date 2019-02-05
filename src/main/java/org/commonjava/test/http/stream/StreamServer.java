@@ -23,7 +23,6 @@ import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.util.ImmediateInstanceFactory;
 import org.commonjava.test.http.common.CommonMethod;
 import org.commonjava.test.http.common.HttpServerFixture;
-import org.commonjava.test.http.expect.ContentResponse;
 import org.commonjava.test.http.util.PortFinder;
 import org.commonjava.test.http.util.UrlUtils;
 import org.junit.rules.ExternalResource;
@@ -32,12 +31,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.commonjava.test.http.util.StreamUtils.isDirectoryResource;
 import static org.commonjava.test.http.util.StreamUtils.isJarResource;
@@ -125,20 +124,25 @@ public class StreamServer
                                              .addDeployment( di );
         dm.deploy();
 
-        port = PortFinder.findOpenPort( 16 );
-        try
-        {
-            server = Undertow.builder()
-                             .setHandler( dm.start() )
-                             .addHttpListener( port, "127.0.0.1" )
-                             .build();
-        }
-        catch ( ServletException e )
-        {
-            throw new IOException( "Failed to start: " + e.getMessage(), e );
-        }
 
-        server.start();
+        AtomicReference<Integer> foundPort = new AtomicReference<>();
+        server = PortFinder.findPortFor( 16, p -> {
+            foundPort.set( p );
+            try
+            {
+                Undertow s = Undertow.builder().setHandler( dm.start() ).addHttpListener( port, "127.0.0.1" ).build();
+
+                s.start();
+                return s;
+            }
+            catch ( ServletException e )
+            {
+                throw new IOException( "Failed to start: " + e.getMessage(), e );
+            }
+        } );
+
+        this.port = foundPort.get();
+
         logger.info( "STARTED Test HTTP Server on 127.0.0.1:" + port );
 
         return this;

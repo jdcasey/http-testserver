@@ -22,13 +22,16 @@ import io.undertow.servlet.api.DeploymentManager;
 import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.util.ImmediateInstanceFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.Servlet;
+import javax.servlet.ServletException;
 
 import org.commonjava.test.http.common.CommonMethod;
 import org.commonjava.test.http.expect.ContentResponse;
@@ -101,13 +104,25 @@ public class TestHttpServer
                                              .addDeployment( di );
         dm.deploy();
 
-        port = PortFinder.findOpenPort( 16 );
-        server = Undertow.builder()
-                         .setHandler( dm.start() )
-                         .addHttpListener( port, "127.0.0.1" )
-                         .build();
+        AtomicReference<Integer> foundPort = new AtomicReference<>();
+        server = PortFinder.findPortFor( 16, p-> {
+            foundPort.set( p );
+            try
+            {
+                final Undertow s =
+                        Undertow.builder().setHandler( dm.start() ).addHttpListener( p, "127.0.0.1" ).build();
 
-        server.start();
+                s.start();
+                return s;
+            }
+            catch ( ServletException e )
+            {
+                throw new IOException( "Failed to start: " + e.getMessage(), e );
+            }
+        });
+
+        this.port = foundPort.get();
+
         logger.info( "STARTED Test HTTP Server on 127.0.0.1:" + port );
     }
 

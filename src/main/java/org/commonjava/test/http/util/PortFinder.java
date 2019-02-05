@@ -29,27 +29,49 @@ public final class PortFinder
     {
     }
 
-    public static int findOpenPort( final int maxTries )
+    public static <T> T findPortFor( final int maxTries, PortConsumer<T> consumer )
     {
         for ( int i = 0; i < maxTries; i++ )
         {
             final int port = 1024 + ( Math.abs( RANDOM.nextInt() ) % 30000 );
-            ServerSocket sock = null;
+            T result = null;
             try
             {
-                sock = new ServerSocket( port );
-                return port;
+                return consumer.call( port );
             }
             catch ( final IOException e )
             {
-            }
-            finally
-            {
-                IOUtils.closeQuietly( sock );
             }
         }
 
         throw new IllegalStateException( "Cannot find open port after " + maxTries + " attempts." );
     }
 
+//    public static int findOpenPort( final int maxTries )
+//    {
+//        for ( int i = 0; i < maxTries; i++ )
+//        {
+//            final int port = 1024 + ( Math.abs( RANDOM.nextInt() ) % 30000 );
+//            ServerSocket sock = null;
+//            try
+//            {
+//                sock = new ServerSocket( port );
+//                return port;
+//            }
+//            catch ( final IOException e )
+//            {
+//            }
+//            finally
+//            {
+//                IOUtils.closeQuietly( sock );
+//            }
+//        }
+//
+//        throw new IllegalStateException( "Cannot find open port after " + maxTries + " attempts." );
+//    }
+
+    public interface PortConsumer<T>
+    {
+        T call(int port) throws IOException;
+    }
 }

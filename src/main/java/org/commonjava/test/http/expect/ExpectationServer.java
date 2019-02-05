@@ -37,6 +37,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ExpectationServer
         extends ExternalResource
@@ -106,17 +107,24 @@ public class ExpectationServer
         final DeploymentManager dm = Servlets.defaultContainer().addDeployment( di );
         dm.deploy();
 
-        port = PortFinder.findOpenPort( 16 );
-        try
-        {
-            server = Undertow.builder().setHandler( dm.start() ).addHttpListener( port, "127.0.0.1" ).build();
-        }
-        catch ( ServletException e )
-        {
-            throw new IOException( "Failed to start: " + e.getMessage(), e );
-        }
+        final AtomicReference<Integer> foundPort = new AtomicReference<>();
+        server = PortFinder.findPortFor( 16, p-> {
+            foundPort.set( Integer.valueOf( p ) );
+            try
+            {
+                Undertow s = Undertow.builder().setHandler( dm.start() ).addHttpListener( p, "127.0.0.1" ).build();
+                s.start();
 
-        server.start();
+                return s;
+            }
+            catch ( ServletException e )
+            {
+                throw new IOException( "Failed to start: " + e.getMessage(), e );
+            }
+        } );
+
+        this.port = foundPort.get();
+
         logger.info( "STARTED Test HTTP Server on 127.0.0.1:" + port );
 
         return this;

@@ -40,7 +40,7 @@
   
   <properties>
     <projectOwner>Red Hat, Inc.</projectOwner>
-    <javaVersion>1.7</javaVersion>
+    <javaVersion>1.8</javaVersion>
     <undertowVersion>1.1.2.Final</undertowVersion>
   </properties>
 
